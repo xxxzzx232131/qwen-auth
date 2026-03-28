@@ -1,0 +1,410 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Qwen OAuth Device Authorization Flow API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: qwen-auth
+    description: Qwen OAuth device authorization flow
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /qwen/device-code:
+    post:
+      operationId: requestDeviceCode
+      tags: [qwen-auth]
+      summary: Request Qwen device code
+      description: Initiates the OAuth device authorization flow by requesting a device code from Qwen
+      responses:
+        "200":
+          description: Device code response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceCodeResponse"
+        "500":
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /qwen/poll-token:
+    post:
+      operationId: pollToken
+      tags: [qwen-auth]
+      summary: Poll for access token
+      description: Polls the Qwen OAuth server to check if the user has completed authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PollTokenRequest"
+      responses:
+        "200":
+          description: Token response (may be pending or granted)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PollTokenResponse"
+        "500":
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /qwen/save-credentials:
+    post:
+      operationId: saveCredentials
+      tags: [qwen-auth]
+      summary: Save OAuth credentials
+      description: Saves the obtained OAuth credentials to the server
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveCredentialsRequest"
+      responses:
+        "200":
+          description: Credentials saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaveCredentialsResponse"
+        "500":
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /qwen/credentials:
+    get:
+      operationId: getCredentials
+      tags: [qwen-auth]
+      summary: Get stored credentials
+      description: Returns the currently stored credentials (without secrets)
+      responses:
+        "200":
+          description: Credentials info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CredentialsInfo"
+        "404":
+          description: No credentials found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /qwen/accounts:
+    get:
+      operationId: listAccounts
+      tags: [qwen-auth]
+      summary: List all saved accounts
+      description: Returns all saved account tokens
+      responses:
+        "200":
+          description: List of accounts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountListResponse"
+
+  /qwen/verify:
+    post:
+      operationId: verifyToken
+      tags: [qwen-auth]
+      summary: Verify token is valid
+      description: Verifies if the current token is valid by making a test API call
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyTokenRequest"
+      responses:
+        "200":
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyTokenResponse"
+
+  /qwen/refresh:
+    post:
+      operationId: refreshToken
+      tags: [qwen-auth]
+      summary: Refresh access token
+      description: Refreshes the OAuth access token using a refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "200":
+          description: New token response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshTokenResponse"
+        "500":
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /qwen/delete-account:
+    delete:
+      operationId: deleteAccount
+      tags: [qwen-auth]
+      summary: Delete a saved account
+      description: Deletes a saved account by its access token ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteAccountRequest"
+      responses:
+        "200":
+          description: Account deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteAccountResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+
+    DeviceCodeResponse:
+      type: object
+      properties:
+        device_code:
+          type: string
+          description: The device code to poll with
+        user_code:
+          type: string
+          description: The user-facing code (if applicable)
+        verification_uri:
+          type: string
+          description: URL user should visit to authorize
+        verification_uri_complete:
+          type: string
+          description: Full URL with code embedded (for QR codes)
+        expires_in:
+          type: integer
+          description: How many seconds until the device code expires
+        interval:
+          type: integer
+          description: Polling interval in seconds
+      required:
+        - device_code
+        - verification_uri
+        - expires_in
+        - interval
+
+    PollTokenRequest:
+      type: object
+      properties:
+        device_code:
+          type: string
+      required:
+        - device_code
+
+    PollTokenResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, authorized, expired, error]
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+        token_type:
+          type: string
+        message:
+          type: string
+      required:
+        - status
+
+    SaveCredentialsRequest:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+        token_type:
+          type: string
+        label:
+          type: string
+          description: Optional label for this account
+      required:
+        - access_token
+
+    SaveCredentialsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        file_path:
+          type: string
+        message:
+          type: string
+      required:
+        - success
+
+    CredentialsInfo:
+      type: object
+      properties:
+        has_credentials:
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+        is_expired:
+          type: boolean
+        label:
+          type: string
+      required:
+        - has_credentials
+
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        is_expired:
+          type: boolean
+        access_token_preview:
+          type: string
+          description: First few chars of the token for identification
+      required:
+        - id
+        - created_at
+
+    AccountListResponse:
+      type: object
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Account"
+        total:
+          type: integer
+      required:
+        - accounts
+        - total
+
+    VerifyTokenRequest:
+      type: object
+      properties:
+        access_token:
+          type: string
+      required:
+        - access_token
+
+    VerifyTokenResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        message:
+          type: string
+      required:
+        - valid
+
+    RefreshTokenRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+      required:
+        - refresh_token
+
+    RefreshTokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+        token_type:
+          type: string
+      required:
+        - access_token
+
+    DeleteAccountRequest:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+        - id
+
+    DeleteAccountResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
