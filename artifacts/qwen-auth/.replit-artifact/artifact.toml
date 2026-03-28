@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Qwen OAuth 设备授权"
+version = "1.0.0"
+id = "artifacts/qwen-auth"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25011
+
+[services.development]
+run = "pnpm --filter @workspace/qwen-auth run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/qwen-auth", "run", "build" ]
+publicDir = "artifacts/qwen-auth/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25011"
+BASE_PATH = "/"
