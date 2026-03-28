@@ -1,0 +1,20 @@
+packages:
+  "framer-motion": "For premium page transitions and micro-interactions"
+  "qrcode.react": "To display the device authorization URL as a QR code"
+  "date-fns": "For elegant date and time formatting"
+  "clsx": "For conditional class name merging"
+  "tailwind-merge": "For merging tailwind classes safely"
+  "@tanstack/react-table": "For advanced data tables in the accounts view"
+
+images:
+  - path: "artifacts/qwen-auth/public/images/auth-bg.png"
+    description: "Abstract dark futuristic technology background with glowing cyan and deep blue neural network or circuitry lines, deep depth of field, premium software aesthetic"
+    aspect_ratio: "16:9"
+  - path: "artifacts/qwen-auth/public/images/hero-glow.png"
+    description: "Subtle glowing deep blue and cyan gradient orb on pitch black background, used for ambient light effects"
+    aspect_ratio: "1:1"
+
+notes:
+  - Assuming standard Shadcn UI components are pre-generated in src/components/ui/
+  - API hooks are imported directly from @workspace/api-client-react
+  - LocalStorage is used to save frontend-only settings (like proxy, batch config)
